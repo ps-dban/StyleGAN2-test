@@ -77,7 +77,7 @@ jobs:
       pretrainedNetwork:
         type: dataset
         with:
-          ref: stylegan2-wsp-pretrained-network
+          ref: stylegan2-wsp-cats-pretrained-network
     uses: container@v1
     with:
       args:
@@ -103,7 +103,7 @@ jobs:
       generatedCatsPretrained:
         type: dataset
         with:
-          ref: stylegan2-wsp-generated-cats-pretrained
+          ref: stylegan2-wsp-cats-generated
     uses: script@v1
     with:
       script: |-
@@ -120,7 +120,31 @@ jobs:
         ls "-aFlR" /outputs
       image: tensorflow/tensorflow:1.14.0-gpu-py3
       
-  # 4. Show generating images using pretrained car model
+      
+  # 4. Get pretrained car model
+
+  # The model .pkl is large so is not in the main StyleGAN2 repo
+  # We copy the .pkl in this step, then refer to the copy via getPretrainedModel.outputs.pretrainedNetwork
+  # below to avoid copying it again in the next steps
+
+  getPretrainedModel:
+    resources:
+      instance-type: C4
+    outputs:
+      pretrainedNetwork:
+        type: dataset
+        with:
+          ref: stylegan2-wsp-cars-pretrained-network
+    uses: container@v1
+    with:
+      args:
+        - wget
+        - https://nvlabs-fi-cdn.nvidia.com/stylegan2/networks/stylegan2-car-config-f.pkl
+        - -P
+        - /outputs/pretrainedNetwork
+      image: alpine:latest
+      
+  # 5. Show generating images using pretrained car model
 
   generateCarImagesPretrainedModel:
     resources:
@@ -135,7 +159,7 @@ jobs:
       generatedCatsPretrained:
         type: dataset
         with:
-          ref: stylegan2-wsp-generated-cars-pretrained
+          ref: stylegan2-wsp-cars-generated
     uses: script@v1
     with:
       script: |-
