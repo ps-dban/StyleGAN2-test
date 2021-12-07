@@ -98,7 +98,7 @@ jobs:
       - getPretrainedModelCats
     inputs:
       repo: cloneStyleGAN2Repo.outputs.repo
-      pretrainedNetwork: getPretrainedModel.outputs.pretrainedNetwork
+      pretrainedNetwork: getPretrainedModelCats.outputs.pretrainedNetwork
     outputs:
       generatedCatsPretrained:
         type: dataset
@@ -154,7 +154,7 @@ jobs:
       - getPretrainedModelCars
     inputs:
       repo: cloneStyleGAN2Repo.outputs.repo
-      pretrainedNetwork: getPretrainedModel.outputs.pretrainedNetwork
+      pretrainedNetwork: getPretrainedModelCars.outputs.pretrainedNetwork
     outputs:
       generatedCarsPretrained:
         type: dataset
