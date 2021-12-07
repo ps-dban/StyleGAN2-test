@@ -120,7 +120,7 @@ jobs:
         ls "-aFlR" /outputs
       image: tensorflow/tensorflow:1.14.0-gpu-py3
       
-  # 3. Show generating images using pretrained cat model
+  # 4. Show generating images using pretrained car model
 
   generateCarImagesPretrainedModel:
     resources:
@@ -135,7 +135,7 @@ jobs:
       generatedCatsPretrained:
         type: dataset
         with:
-          ref: stylegan2-wsp-generated-cats-pretrained
+          ref: stylegan2-wsp-generated-cars-pretrained
     uses: script@v1
     with:
       script: |-
