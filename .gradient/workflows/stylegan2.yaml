@@ -1,42 +1,121 @@
+# StyleGAN2 Workflow 2 of 2: Train and evaluate model
+#
+# This is the YAML file used to run the Gradient modeling Workflow for the sample project based on StyleGAN2 at
+# https://docs.paperspace.com/gradient/get-started/tutorials-list/workflows-sample-project .
+#
+# See that URL for details on how to run the project.
+#
+# We assume the reader is familiar with the basics of Workflows, and here wishes to use them for real projects.
+#
+# Steps performed by the Workflow
+#
+# 1. Clone StyleGAN repo into managed storage provider dataset
+# 2. Get pretrained cat model
+# 3. Run evaluation on pretrained cat model
+# 4. Show generating images using pretrained cat model
+# 5. Train our model on image subsample
+# 6. Run evaluation on our trained model
+# 7. Show generating images with our trained model
+#
+# Dataset IDs
+#
+# The user needs to create their own Gradient managed datasets for job outputs, using the same names as here.
+# See the project documentation for details on how to do this.
+#
+# Job name                         Gradient managed dataset name
+#
+# getPretrainedModel            -> stylegan2-wsp-pretrained-network
+# evaluatePretrainedModel       -> stylegan2-wsp-evaluation-pretrained
+# generateImagesPretrainedModel -> stylegan2-wsp-generated-cats-pretrained
+# trainOurModel                 -> stylegan2-wsp-our-trained-network
+# evaluateOurModel              -> stylegan2-wsp-evaluation-ours
+# generateImagesOurModel        -> stylegan2-wsp-generated-cats-ours
+#
+# The names for the Gradient managed datasets should correspond to the names output from running the first workflow of
+# the pair in this project (stylegan2-download-and-extract-data.yaml).
+#
+# We create different datasets for the output from each job because jobs can run in parallel and if their outputs were
+# put into the same dataset it would create clashing versions.
+#
+# Last updated: Nov 03rd 2021
+
+# Trigger Workflow to run on any update (commit) to the repository when linked to a Gradient project
+# (uncomment to activate)
+#
+# An example of a change is to change the random seeds for image generation in the --seeds=6600-6605 argument to the
+# python run_generator.py generate-images command in job 4 (generateImagesPretrainedModel) below
+
 on:
-  github:
-    branches:
-      only: main
+ github:
+   branches:
+     only: main
 
 jobs:
-  CloneRepo:
+
+  # 1. Clone StyleGAN repo into managed storage provider dataset
+
+  cloneStyleGAN2Repo:
     resources:
       instance-type: C4
     outputs:
-     stylegan2:
+      repo:
         type: volume
     uses: git-checkout@v1
     with:
-      # url: https://github.com/gradient-ai/stylegan2.git
-      url: context.event.github.url
-      ref: context.event.github.ref
-  StyleGan2:
+      url: https://github.com/NVlabs/stylegan2.git
+
+  # 2. Get pretrained cat model
+
+  # The model .pkl is large so is not in the main StyleGAN2 repo
+  # We copy the .pkl in this step, then refer to the copy via getPretrainedModel.outputs.pretrainedNetwork
+  # below to avoid copying it again in the next steps
+
+  getPretrainedModel:
+    resources:
+      instance-type: C4
+    outputs:
+      pretrainedNetwork:
+        type: dataset
+        with:
+          ref: stylegan2-wsp-pretrained-network
+    uses: container@v1
+    with:
+      args:
+        - wget
+        - https://nvlabs-fi-cdn.nvidia.com/stylegan2/networks/stylegan2-cat-config-f.pkl
+        - -P
+        - /outputs/pretrainedNetwork
+      image: alpine:latest
+
+
+  # 4. Show generating images using pretrained cat model
+
+  generateImagesPretrainedModel:
     resources:
       instance-type: P4000
     needs:
-      - CloneRepo
+      - cloneStyleGAN2Repo
+      - getPretrainedModel
     inputs:
-      stylegan2: CloneRepo.outputs.stylegan2
+      repo: cloneStyleGAN2Repo.outputs.repo
+      pretrainedNetwork: getPretrainedModel.outputs.pretrainedNetwork
     outputs:
-      generatedFaces:
+      generatedCatsPretrained:
         type: dataset
         with:
-          ref: demo-dataset
+          ref: stylegan2-wsp-generated-cats-pretrained
     uses: script@v1
     with:
       script: |-
         pip install scipy==1.3.3
         pip install requests==2.22.0
         pip install Pillow==6.2.1
-        cd /inputs/stylegan2
+        cp -R /inputs/repo /stylegan2
+        cd /stylegan2
         python run_generator.py generate-images \
-          --network=gdrive:networks/stylegan2-ffhq-config-f.pkl \
+          --network=/inputs/pretrainedNetwork/stylegan2-cat-config-f.pkl \
           --seeds=6600-6605 \
           --truncation-psi=0.5 \
-          --result-dir=/outputs/generatedFaces
+          --result-dir=/outputs/generatedCatsPretrained
+        ls "-aFlR" /outputs
       image: tensorflow/tensorflow:1.14.0-gpu-py3
