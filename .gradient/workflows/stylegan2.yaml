@@ -90,7 +90,7 @@ jobs:
 
   # 3. Show generating images using pretrained cat model
 
-  generateImagesPretrainedModel:
+  generateCatImagesPretrainedModel:
     resources:
       instance-type: P4000
     needs:
@@ -122,7 +122,7 @@ jobs:
       
   # 3. Show generating images using pretrained cat model
 
-  generateImagesPretrainedModel:
+  generateCarImagesPretrainedModel:
     resources:
       instance-type: P4000
     needs:
